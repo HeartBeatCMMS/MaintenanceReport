@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formato de Mantenimiento de Equipo Biomédico</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ BARRA DE HERRAMIENTAS (no imprimible) ============ -->
+<div class="toolbar no-print">
+  <div class="toolbar-title">Formato de Mantenimiento de Equipo Biomédico</div>
+  <div class="toolbar-actions">
+    <button type="button" id="btnPreview" class="btn btn-secondary">👁 Vista previa</button>
+    <button type="button" id="btnPrint" class="btn btn-primary">🖨 Imprimir / Guardar PDF</button>
+    <button type="button" id="btnSaveDraft" class="btn btn-secondary">💾 Guardar borrador</button>
+    <button type="button" id="btnLoadDraft" class="btn btn-secondary">📂 Recuperar borrador</button>
+    <button type="button" id="btnClear" class="btn btn-danger">🗑 Limpiar formulario</button>
+  </div>
+</div>
+<p class="print-tip no-print">💡 Antes de imprimir o guardar como PDF, en el diálogo de impresión desactive la opción “Encabezados y pies de página” para una salida limpia.</p>
+
+<!-- ============ HOJA DEL DOCUMENTO (A4) ============ -->
+<form id="maintenanceForm" novalidate>
+<div id="sheet" class="sheet">
+
+  <!-- ===================== ENCABEZADO ===================== -->
+  <header class="doc-header" id="printHeader">
+    <div class="header-left">
+      <div class="logo-box">
+        <img id="logoPreview" class="logo-img" alt="Logo" hidden>
+      </div>
+
+      <div class="company-block">
+        <div class="static-value company-name" data-config="providerName"></div>
+        <div class="static-value company-sub" data-config="companySub"></div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <h1 class="doc-title">FORMATO DE MANTENIMIENTO<br>DE EQUIPO BIOMÉDICO</h1>
+    </div>
+
+    <div class="header-right">
+      <table class="doc-meta-table doc-meta-compact">
+        <tr>
+          <th>N.° Formato</th>
+          <td><span class="static-value" data-config="docNumber"></span></td>
+        </tr>
+        <tr>
+          <th>Versión</th>
+          <td><span class="static-value" data-config="docVersion"></span></td>
+        </tr>
+        <tr>
+          <th>Fecha elaboración</th>
+          <td><span class="static-value" data-config="docDate"></span></td>
+        </tr>
+      </table>
+      <div class="maint-date-highlight">
+        <label>Fecha de mantenimiento</label>
+        <input type="date" class="field-input maint-date-input" data-field="maintDate">
+      </div>
+    </div>
+  </header>
+
+  <section class="section maint-type-section" id="sectionMaintType">
+    <div class="section-title">TIPO DE MANTENIMIENTO</div>
+    <div class="choice-group" data-choice-for="maintType">
+      <button type="button" class="choice-btn" data-value="Preventivo">Preventivo</button>
+      <button type="button" class="choice-btn" data-value="Correctivo">Correctivo</button>
+      <button type="button" class="choice-btn" data-value="Preventivo y correctivo">Preventivo y correctivo</button>
+      <button type="button" class="choice-btn" data-value="Otro">Otro</button>
+      <span class="choice-other-inline">
+        Especifique: <input type="text" class="field-input inline-input" data-field="maintTypeOther" placeholder="Especifique">
+      </span>
+    </div>
+    <input type="hidden" data-field="maintType">
+  </section>
+
+  <!-- ===================== INFORMACIÓN DEL CLIENTE ===================== -->
+  <section class="section" id="sectionClient">
+    <div class="section-title">INFORMACIÓN DEL CLIENTE / INSTITUCIÓN</div>
+    <div class="grid grid-3">
+      <div class="form-group"><label>Nombre de la institución</label><input type="text" class="field-input" data-field="clientName"></div>
+      <div class="form-group"><label>NIT</label><input type="text" class="field-input" data-field="clientNit"></div>
+      <div class="form-group"><label>Dirección</label><input type="text" class="field-input" data-field="clientAddress"></div>
+      <div class="form-group"><label>Ciudad / Municipio</label><input type="text" class="field-input" data-field="clientCity"></div>
+      <div class="form-group"><label>Teléfono</label><input type="text" class="field-input" data-field="clientPhone"></div>
+      <div class="form-group"><label>Correo electrónico</label><input type="email" class="field-input" data-field="clientEmail"></div>
+      <div class="form-group"><label>Servicio / Área</label><input type="text" class="field-input" data-field="clientArea"></div>
+      <div class="form-group"><label>Responsable del equipo</label><input type="text" class="field-input" data-field="clientResponsible"></div>
+      <div class="form-group"><label>Cargo del responsable</label><input type="text" class="field-input" data-field="clientResponsibleRole"></div>
+    </div>
+  </section>
+
+  <!-- ===================== IDENTIFICACIÓN DEL EQUIPO ===================== -->
+  <section class="section" id="sectionEquipment">
+    <div class="section-title">IDENTIFICACIÓN DEL EQUIPO</div>
+    <div class="grid grid-3">
+      <div class="form-group"><label>Nombre del equipo <span class="required">*</span></label><input type="text" class="field-input" data-field="eqName" data-required="true"></div>
+      <div class="form-group"><label>Marca</label><input type="text" class="field-input" data-field="eqBrand"></div>
+      <div class="form-group"><label>Modelo</label><input type="text" class="field-input" data-field="eqModel"></div>
+      <div class="form-group"><label>Número de serie</label><input type="text" class="field-input" data-field="eqSerial"></div>
+      <div class="form-group"><label>Código interno / inventario</label><input type="text" class="field-input" data-field="eqCode"></div>
+      <div class="form-group"><label>Ubicación</label><input type="text" class="field-input" data-field="eqLocation"></div>
+      <div class="form-group"><label>Servicio</label><input type="text" class="field-input" data-field="eqService"></div>
+      <div class="form-group">
+        <label>Tecnología predominante</label>
+        <select class="field-input" data-field="eqTech">
+          <option value="">Seleccione...</option>
+          <option>Electrónica</option>
+          <option>Eléctrica</option>
+          <option>Mecánica</option>
+          <option>Electromecánica</option>
+          <option>Neumática</option>
+          <option>Hidráulica</option>
+          <option>Óptica</option>
+          <option>Combinación de tecnologías</option>
+          <option>Otra</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Estado inicial del equipo</label><input type="text" class="field-input" placeholder="Ej: Operativo, con novedades, fuera de servicio..." data-field="eqInitialState"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ACTIVIDADES REALIZADAS ===================== -->
+  <section class="section avoid-break" id="sectionActivities">
+    <div class="section-title">ACTIVIDADES REALIZADAS</div>
+    <p class="hint no-print">Agregue únicamente las actividades específicas realizadas sobre este equipo. La lista es libre y editable.</p>
+    <table class="data-table" id="activitiesTable">
+      <thead>
+        <tr>
+          <th class="col-item">Ítem</th>
+          <th class="col-activity">Actividad / componente</th>
+          <th class="col-finding">Hallazgo / condición</th>
+          <th class="col-status">Estado</th>
+          <th class="col-action">Acción realizada</th>
+          <th class="col-obs">Observaciones</th>
+          <th class="col-actions no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="activitiesBody"></tbody>
+    </table>
+    <button type="button" class="btn btn-add no-print" id="btnAddActivity">+ Agregar ítem</button>
+  </section>
+
+  <!-- ===================== REPUESTOS ===================== -->
+  <section class="section avoid-break" id="sectionParts">
+    <div class="section-title">REPUESTOS, COMPONENTES E INSUMOS UTILIZADOS <span class="optional">(opcional)</span></div>
+    <table class="data-table" id="partsTable">
+      <thead>
+        <tr>
+          <th class="col-item">Ítem</th>
+          <th>Descripción</th>
+          <th>Marca / referencia</th>
+          <th class="col-small">Cantidad</th>
+          <th class="col-small">Unidad</th>
+          <th>Observación</th>
+          <th class="col-actions no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="partsBody"></tbody>
+    </table>
+    <button type="button" class="btn btn-add no-print" id="btnAddPart">+ Agregar repuesto / insumo</button>
+  </section>
+
+  <!-- ===================== INSTRUMENTOS ===================== -->
+  <section class="section avoid-break" id="sectionTools">
+    <div class="section-title">EQUIPOS E INSTRUMENTOS UTILIZADOS</div>
+    <table class="data-table" id="toolsTable">
+      <thead>
+        <tr>
+          <th>Equipo / instrumento</th>
+          <th>Observaciones</th>
+          <th class="col-actions no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="toolsBody"></tbody>
+    </table>
+    <button type="button" class="btn btn-add no-print" id="btnAddTool">+ Agregar instrumento</button>
+  </section>
+
+  <!-- ===================== RESULTADO DEL MANTENIMIENTO ===================== -->
+  <section class="section avoid-break" id="sectionResult">
+    <div class="section-title">RESULTADO DEL MANTENIMIENTO</div>
+    <div class="grid grid-2">
+      <div class="form-group">
+        <label>Resultado general</label>
+        <select class="field-input" data-field="maintResult">
+          <option value="">Seleccione...</option>
+          <option>Equipo operativo</option>
+          <option>Equipo operativo con recomendaciones</option>
+          <option>Equipo operativo con restricciones</option>
+          <option>Equipo fuera de servicio</option>
+          <option>Requiere mantenimiento adicional</option>
+          <option>Requiere repuesto</option>
+          <option>Requiere calibración/verificación</option>
+          <option>Requiere intervención especializada</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado final del equipo</label>
+        <div class="choice-group" data-choice-for="finalState">
+          <button type="button" class="choice-btn" data-value="Conforme">Conforme</button>
+          <button type="button" class="choice-btn" data-value="No conforme">No conforme</button>
+          <button type="button" class="choice-btn" data-value="Condicionado">Condicionado</button>
+          <button type="button" class="choice-btn" data-value="Fuera de servicio">Fuera de servicio</button>
+        </div>
+        <input type="hidden" data-field="finalState">
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== OBSERVACIONES / RECOMENDACIONES ===================== -->
+  <section class="section avoid-break" id="sectionObservations">
+    <div class="section-title">OBSERVACIONES</div>
+    <textarea class="field-input textarea-big" rows="5" data-field="observations" placeholder="Hallazgos, condiciones encontradas, novedades, limitaciones, daños o anomalías..."></textarea>
+  </section>
+
+  <section class="section avoid-break" id="sectionRecommendations">
+    <div class="section-title">RECOMENDACIONES</div>
+    <textarea class="field-input textarea-big" rows="5" data-field="recommendations" placeholder="Acciones sugeridas, mantenimientos futuros, reemplazo de componentes, seguimiento, capacitación, calibración..."></textarea>
+  </section>
+
+  <!-- ===================== EVIDENCIA FOTOGRÁFICA ===================== -->
+  <section class="section avoid-break" id="sectionPhotos">
+    <div class="section-title">EVIDENCIA FOTOGRÁFICA</div>
+    <div class="photo-gallery" id="photoGallery"></div>
+    <input type="file" id="photoInput" accept="image/*" multiple class="hidden-input no-print">
+    <button type="button" class="btn btn-add no-print" id="btnAddPhoto">+ Agregar fotografía</button>
+  </section>
+
+  <!-- ===================== FIRMAS ===================== -->
+  <section class="section signatures-section avoid-break" id="sectionSignatures">
+    <div class="signature-box" id="engineerSignatureBox">
+      <div class="section-title">RESPONSABLE DEL MANTENIMIENTO <span class="signature-requirement">Obligatoria</span></div>
+      <div class="signature-pad">
+        <canvas id="signatureCanvas" class="signature-canvas" aria-label="Área táctil para firmar como responsable del mantenimiento" role="application" tabindex="0"></canvas>
+        <img id="signaturePreview" class="signature-img" alt="" hidden>
+        <span id="signaturePlaceholder" class="signature-placeholder">Dibuje su firma aquí o cargue una imagen</span>
+      </div>
+      <p id="engineerSignatureError" class="signature-error" role="alert" hidden>La firma del ingeniero es obligatoria para completar el formato.</p>
+      <div class="signature-actions no-print">
+        <label class="mini-btn file-label">
+          Cargar firma
+          <input type="file" id="signatureInput" accept="image/*" class="hidden-input">
+        </label>
+        <button type="button" id="btnRemoveSignature" class="mini-btn">Eliminar firma</button>
+      </div>
+      <div class="signature-data">
+        <div class="form-group"><label>Nombre</label><input type="text" class="field-input" data-field="respName"></div>
+        <div class="form-group"><label>Cargo</label><input type="text" class="field-input" data-field="respRole"></div>
+        <div class="form-group"><label>Registro sanitario</label><span class="static-value" data-config="sanitaryRegistration"></span></div>
+        <div class="form-group"><label>Fecha</label><input type="date" class="field-input" data-field="respDate"></div>
+      </div>
+    </div>
+
+    <div class="signature-box" id="receiverSignatureBox">
+      <div class="section-title">RECIBIDO A SATISFACCIÓN <span class="signature-requirement optional-signature">Opcional</span></div>
+      <div class="signature-pad">
+        <canvas id="receiverSignatureCanvas" class="signature-canvas" aria-label="Área táctil para firma opcional del cliente" role="application" tabindex="0"></canvas>
+        <img id="receiverSignaturePreview" class="signature-img" alt="" hidden>
+        <span id="receiverSignaturePlaceholder" class="signature-placeholder">Dibuje la firma aquí o cargue una imagen</span>
+      </div>
+      <div class="signature-actions no-print">
+        <label class="mini-btn file-label">
+          Cargar firma (opcional)
+          <input type="file" id="receiverSignatureInput" accept="image/*" class="hidden-input">
+        </label>
+        <button type="button" id="btnRemoveReceiverSignature" class="mini-btn">Eliminar firma</button>
+      </div>
+      <div class="signature-data">
+        <div class="form-group"><label>Nombre</label><input type="text" class="field-input" data-field="receiverName"></div>
+        <div class="form-group"><label>Cargo</label><input type="text" class="field-input" data-field="receiverRole"></div>
+        <div class="form-group"><label>Documento de identificación</label><input type="text" class="field-input" data-field="receiverId"></div>
+        <div class="form-group"><label>Fecha</label><input type="date" class="field-input" data-field="receiverDate"></div>
+        <div class="form-group full-width"><label>Observaciones (opcional)</label><input type="text" class="field-input" data-field="receiverObs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PIE DE PÁGINA ===================== -->
+  <footer class="doc-footer" id="printFooter">
+    <div class="footer-line" id="footerLine"></div>
+  </footer>
+
+</div>
+</form>
+
+<script src="config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
