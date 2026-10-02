@@ -10,8 +10,14 @@
   /* ---------------------------------------------------------
      Constantes y referencias generales
   --------------------------------------------------------- */
-  const STORAGE_KEY = 'biomedicalMaintenanceDraft_v1';
+  const STORAGE_KEY = 'biomedicalMaintenanceFormats_v1';
+  const LEGACY_STORAGE_KEY = 'biomedicalMaintenanceDraft_v1';
   const form = document.getElementById('maintenanceForm');
+
+  let formats = [];
+  let activeFormatId = 1;
+  let nextFormatId = 1;
+  let reviewMode = false;
 
   const activitiesBody = document.getElementById('activitiesBody');
   const partsBody = document.getElementById('partsBody');
@@ -167,7 +173,20 @@
     Array.from(fileList).forEach((file) => {
       if (!file.type.startsWith('image/')) return;
       const reader = new FileReader();
-      reader.onload = (e) => addPhotoItem(e.target.result);
+      const ownerId = activeFormatId;
+      reader.onload = (e) => {
+        if (ownerId === activeFormatId) {
+          addPhotoItem(e.target.result);
+          saveDraftSilently();
+          return;
+        }
+        const owner = formats.find((item) => item.id === ownerId);
+        if (owner) {
+          owner.data.photos.push({ src: e.target.result, caption: '' });
+          persistFormats();
+          updateFormatNavigation();
+        }
+      };
       reader.readAsDataURL(file);
     });
   }
@@ -292,7 +311,18 @@
       const file = input.files && input.files[0];
       if (!file || !file.type.startsWith('image/')) return;
       const reader = new FileReader();
+      const ownerId = activeFormatId;
       reader.onload = (e) => {
+        if (ownerId !== activeFormatId) {
+          const owner = formats.find((item) => item.id === ownerId);
+          if (owner) {
+            owner.data.images = owner.data.images || {};
+            owner.data.images[previewId] = e.target.result;
+            persistFormats();
+            updateFormatNavigation();
+          }
+          return;
+        }
         showImage(e.target.result);
         saveDraftSilently();
       };
@@ -306,7 +336,6 @@
           : '¿Desea eliminar esta imagen?';
         if (confirmAction(message)) {
           clearImage();
-          if (box && box.id === 'engineerSignatureBox') localStorage.removeItem(STORAGE_KEY);
           saveDraftSilently();
         }
       });
@@ -445,8 +474,25 @@
     return data;
   }
 
+  function resetFormData() {
+    form.reset();
+    form.querySelectorAll('.field-invalid').forEach((field) => field.classList.remove('field-invalid'));
+    activitiesBody.innerHTML = '';
+    partsBody.innerHTML = '';
+    toolsBody.innerHTML = '';
+    photoGallery.innerHTML = '';
+    signatureUpload.clearImage();
+    receiverSignatureUpload.clearImage();
+    syncChoiceGroups();
+    addActivityRow();
+    showEmptyPhotoMessage();
+    setDefaultDates();
+  }
+
   function applyFormData(data) {
     if (!data) return;
+
+    resetFormData();
 
     Object.entries(data.fields || {}).forEach(([name, value]) => {
       const field = form.querySelector(`[data-field="${name}"]`);
@@ -491,6 +537,171 @@
     }
   }
 
+  function getActiveFormat() {
+    return formats.find((item) => item.id === activeFormatId);
+  }
+
+  function saveActiveFormat() {
+    const active = getActiveFormat();
+    if (active) active.data = serializeForm();
+  }
+
+  function persistFormats() {
+    saveActiveFormat();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 2,
+      activeId: activeFormatId,
+      nextId: nextFormatId,
+      formats,
+    }));
+  }
+
+  function restoreFormatCollection(data) {
+    let collection = data;
+    if (!collection || !Array.isArray(collection.formats)) {
+      if (!collection || !collection.fields) return false;
+      collection = { activeId: 1, nextId: 2, formats: [{ id: 1, data: collection }] };
+    }
+
+    formats = collection.formats.map((item, index) => ({
+      id: Number(item.id) > 0 ? Number(item.id) : index + 1,
+      data: item.data || { fields: {}, activities: [], parts: [], tools: [], photos: [], images: {} },
+    }));
+    if (formats.length === 0) return false;
+
+    const maxId = Math.max(...formats.map((item) => item.id));
+    nextFormatId = Math.max(Number(collection.nextId) || 1, maxId + 1);
+    activeFormatId = formats.some((item) => item.id === Number(collection.activeId))
+      ? Number(collection.activeId)
+      : formats[0].id;
+    return true;
+  }
+
+  function hasEngineerSignature(data) {
+    return Boolean(data && data.images && data.images.signaturePreview);
+  }
+
+  function isFormatComplete(item) {
+    return Boolean(item && item.data && item.data.fields && item.data.fields.eqName && item.data.fields.eqName.trim() && hasEngineerSignature(item.data));
+  }
+
+  function getFormatStatus(item) {
+    if (isFormatComplete(item)) return 'Firmado';
+    if (item.data.fields && item.data.fields.eqName && item.data.fields.eqName.trim()) return 'Pendiente de firma';
+    return 'Diligenciando';
+  }
+
+  function updateFormatNavigation() {
+    const select = document.getElementById('formatSelect');
+    select.replaceChildren();
+    formats.forEach((item) => {
+      const option = document.createElement('option');
+      const name = item.data.fields && item.data.fields.eqName ? item.data.fields.eqName.trim() : '';
+      option.value = String(item.id);
+      option.textContent = `Formato #${item.id} · ${name || 'Sin equipo'} · ${getFormatStatus(item)}`;
+      select.appendChild(option);
+    });
+    select.value = String(activeFormatId);
+    document.getElementById('btnDeleteFormat').disabled = formats.length <= 1;
+
+    const filled = formats.filter((item) => item.data.fields && item.data.fields.eqName && item.data.fields.eqName.trim()).length;
+    const pending = formats.filter((item) => getFormatStatus(item) === 'Pendiente de firma').length;
+    const signed = formats.filter(isFormatComplete).length;
+    const clientSigned = formats.filter((item) => item.data.images && item.data.images.receiverSignaturePreview).length;
+    document.getElementById('formatTotalCount').textContent = `${formats.length} formato${formats.length === 1 ? '' : 's'} creado${formats.length === 1 ? '' : 's'}`;
+    document.getElementById('formatFilledCount').textContent = `${filled} diligenciado${filled === 1 ? '' : 's'}`;
+    document.getElementById('formatPendingCount').textContent = `${pending} pendiente${pending === 1 ? '' : 's'} de firma`;
+    document.getElementById('formatSignedCount').textContent = `${signed} firmado${signed === 1 ? '' : 's'}`;
+    document.getElementById('formatClientSignedCount').textContent = `${clientSigned} firma${clientSigned === 1 ? '' : 's'} de cliente`;
+
+    const overallStatus = document.getElementById('formatOverallStatus');
+    const allComplete = formats.length > 0 && signed === formats.length;
+    overallStatus.textContent = allComplete ? '✓ Todos los formatos están completos' : 'Hay formatos por completar o firmar';
+    overallStatus.classList.toggle('is-complete', allComplete);
+
+    const reviewNav = document.getElementById('formatReviewNav');
+    reviewNav.hidden = !reviewMode;
+    if (reviewMode) {
+      const position = formats.findIndex((item) => item.id === activeFormatId);
+      document.getElementById('formatReviewPosition').textContent = `Formato ${position + 1} de ${formats.length}`;
+      document.getElementById('btnReviewPrevious').disabled = position <= 0;
+      document.getElementById('btnReviewNext').textContent = position === formats.length - 1 ? 'Finalizar' : 'Siguiente →';
+    }
+  }
+
+  function switchFormat(id) {
+    const target = formats.find((item) => item.id === Number(id));
+    if (!target || target.id === activeFormatId) return;
+    clearTimeout(saveTimeout);
+    saveActiveFormat();
+    activeFormatId = target.id;
+    applyFormData(target.data);
+    updateFormatNavigation();
+    saveDraftSilently();
+  }
+
+  function createFormat() {
+    clearTimeout(saveTimeout);
+    saveActiveFormat();
+    const item = { id: nextFormatId++, data: null };
+    formats.push(item);
+    activeFormatId = item.id;
+    resetFormData();
+    item.data = serializeForm();
+    updateFormatNavigation();
+    persistFormats();
+  }
+
+  function deleteActiveFormat() {
+    if (formats.length <= 1) return;
+    const active = getActiveFormat();
+    if (!confirmAction(`¿Desea eliminar el Formato #${active.id}? Esta acción no se puede deshacer.`)) return;
+    const index = formats.indexOf(active);
+    formats = formats.filter((item) => item !== active);
+    const next = formats[Math.max(0, index - 1)];
+    activeFormatId = next.id;
+    applyFormData(next.data);
+    updateFormatNavigation();
+    persistFormats();
+  }
+
+  function startFormatReview() {
+    saveActiveFormat();
+    reviewMode = true;
+    const firstPending = formats.find((item) => !isFormatComplete(item));
+    if (firstPending && firstPending.id !== activeFormatId) switchFormat(firstPending.id);
+    updateFormatNavigation();
+    document.getElementById('sectionSignatures').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function finishFormatReview() {
+    if (!validateForm()) return;
+    saveActiveFormat();
+    const incomplete = formats.find((item) => !isFormatComplete(item));
+    if (incomplete) {
+      window.alert(`El Formato #${incomplete.id} aún necesita información o la firma obligatoria del ingeniero.`);
+      switchFormat(incomplete.id);
+      document.getElementById('sectionSignatures').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    reviewMode = false;
+    updateFormatNavigation();
+    persistFormats();
+    window.alert(`Los ${formats.length} formatos están completos y firmados por el ingeniero.`);
+  }
+
+  function moveReview(direction) {
+    const index = formats.findIndex((item) => item.id === activeFormatId);
+    if (direction > 0 && !validateForm()) return;
+    saveActiveFormat();
+    const target = formats[index + direction];
+    if (direction > 0 && index === formats.length - 1) {
+      finishFormatReview();
+      return;
+    }
+    if (target) switchFormat(target.id);
+  }
+
   function showEmptyPhotoMessage() {
     if (!photoGallery.querySelector('.photo-empty')) {
       photoGallery.appendChild(elementFromHTML('<p class="photo-empty">No se han agregado fotografías.</p>'));
@@ -502,11 +713,14 @@
   --------------------------------------------------------- */
   let saveTimeout = null;
   function saveDraftSilently() {
-    if (!validateEngineerSignatureQuietly()) return;
+    if (formats.length) {
+      saveActiveFormat();
+      updateFormatNavigation();
+    }
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeForm()));
+        persistFormats();
       } catch (err) {
         console.warn('No fue posible autoguardar el borrador:', err);
       }
@@ -516,27 +730,28 @@
   function saveDraft(showFeedback = true) {
     if (!validateEngineerSignature()) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeForm()));
+      persistFormats();
       if (showFeedback) window.alert('Borrador guardado correctamente en este navegador.');
     } catch (err) {
       window.alert('No fue posible guardar el borrador. Es posible que el almacenamiento local esté lleno o deshabilitado.');
     }
   }
 
-  function validateEngineerSignatureQuietly() {
-    const preview = document.getElementById('signaturePreview');
-    return Boolean(preview && !preview.hidden && preview.src);
-  }
-
   function loadDraft(showFeedback = true) {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) {
       if (showFeedback) window.alert('No se encontró ningún borrador guardado.');
       return;
     }
     try {
-      const data = JSON.parse(raw);
-      applyFormData(data);
+      const saved = JSON.parse(raw);
+      const currentId = activeFormatId;
+      if (!restoreFormatCollection(saved)) throw new Error('Formato guardado no válido');
+      const active = formats.find((item) => item.id === currentId) || getActiveFormat();
+      activeFormatId = active.id;
+      applyFormData(active.data);
+      updateFormatNavigation();
+      persistFormats();
       if (showFeedback) window.alert('Borrador recuperado correctamente.');
     } catch (err) {
       window.alert('El borrador guardado está dañado y no pudo recuperarse.');
@@ -547,25 +762,13 @@
      LIMPIAR FORMULARIO
   --------------------------------------------------------- */
   function clearForm() {
-    if (!confirmAction('¿Está seguro de que desea limpiar todo el formulario? Se perderá la información no guardada.')) {
+    if (!confirmAction(`¿Está seguro de que desea limpiar el Formato #${activeFormatId}? Se perderá su información no guardada.`)) {
       return;
     }
-    form.reset();
-
-    activitiesBody.innerHTML = '';
-    partsBody.innerHTML = '';
-    toolsBody.innerHTML = '';
-    photoGallery.innerHTML = '';
-
-    signatureUpload.clearImage();
-    receiverSignatureUpload.clearImage();
-
-    syncChoiceGroups();
-    addActivityRow();
-    showEmptyPhotoMessage();
-    setDefaultDates();
-
-    localStorage.removeItem(STORAGE_KEY);
+    resetFormData();
+    saveActiveFormat();
+    updateFormatNavigation();
+    persistFormats();
   }
 
   /* ---------------------------------------------------------
@@ -655,6 +858,17 @@
 
     document.getElementById('btnPreview').addEventListener('click', previewForm);
     document.getElementById('btnPrint').addEventListener('click', printForm);
+    document.getElementById('btnPrintBottom').addEventListener('click', printForm);
+    document.getElementById('formatSelect').addEventListener('change', (event) => switchFormat(event.target.value));
+    document.getElementById('btnNewFormat').addEventListener('click', createFormat);
+    document.getElementById('btnDeleteFormat').addEventListener('click', deleteActiveFormat);
+    document.getElementById('btnReviewFormats').addEventListener('click', startFormatReview);
+    document.getElementById('btnReviewPrevious').addEventListener('click', () => moveReview(-1));
+    document.getElementById('btnReviewNext').addEventListener('click', () => moveReview(1));
+    document.getElementById('btnExitReview').addEventListener('click', () => {
+      reviewMode = false;
+      updateFormatNavigation();
+    });
     document.getElementById('btnSaveDraft').addEventListener('click', () => saveDraft(true));
     document.getElementById('btnLoadDraft').addEventListener('click', () => loadDraft(true));
     document.getElementById('btnClear').addEventListener('click', clearForm);
@@ -679,19 +893,27 @@
     renderConfig();
     setDefaultDates();
 
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    let restored = false;
     if (raw) {
       try {
-        applyFormData(JSON.parse(raw));
+        restored = restoreFormatCollection(JSON.parse(raw));
       } catch (err) {
-        addActivityRow();
-        showEmptyPhotoMessage();
+        console.warn('No fue posible recuperar los formatos guardados:', err);
       }
-    } else {
-      addActivityRow();
-      showEmptyPhotoMessage();
     }
 
+    if (restored) {
+      applyFormData(getActiveFormat().data);
+    } else {
+      formats = [{ id: 1, data: null }];
+      activeFormatId = 1;
+      nextFormatId = 2;
+      resetFormData();
+    }
+
+    updateFormatNavigation();
+    persistFormats();
     updateFooterInfo();
   }
 

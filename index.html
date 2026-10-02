@@ -21,6 +21,34 @@
 </div>
 <p class="print-tip no-print">💡 Antes de imprimir o guardar como PDF, en el diálogo de impresión desactive la opción “Encabezados y pies de página” para una salida limpia.</p>
 
+<section class="format-manager no-print" aria-label="Gestión de formatos">
+  <div class="format-manager-main">
+    <div class="format-picker">
+      <label for="formatSelect">Formato actual</label>
+      <select id="formatSelect" class="field-input"></select>
+    </div>
+    <button type="button" id="btnNewFormat" class="btn btn-secondary">+ Nuevo formato</button>
+    <button type="button" id="btnDeleteFormat" class="btn btn-danger">Eliminar actual</button>
+    <button type="button" id="btnReviewFormats" class="btn btn-primary">Revisar y firmar formatos</button>
+  </div>
+  <div id="formatReviewNav" class="format-review-nav" hidden>
+    <span id="formatReviewPosition" aria-live="polite"></span>
+    <div class="format-review-actions">
+      <button type="button" id="btnReviewPrevious" class="btn btn-secondary">← Anterior</button>
+      <button type="button" id="btnReviewNext" class="btn btn-primary">Siguiente →</button>
+      <button type="button" id="btnExitReview" class="mini-btn">Salir de revisión</button>
+    </div>
+  </div>
+  <div class="format-summary" aria-live="polite">
+    <span id="formatTotalCount"></span>
+    <span id="formatFilledCount"></span>
+    <span id="formatPendingCount"></span>
+    <span id="formatSignedCount"></span>
+    <span id="formatClientSignedCount"></span>
+    <strong id="formatOverallStatus"></strong>
+  </div>
+</section>
+
 <!-- ============ HOJA DEL DOCUMENTO (A4) ============ -->
 <form id="maintenanceForm" novalidate>
 <div id="sheet" class="sheet">
@@ -286,6 +314,9 @@
     <div class="footer-line" id="footerLine"></div>
   </footer>
 
+</div>
+<div class="bottom-actions no-print">
+  <button type="button" id="btnPrintBottom" class="btn btn-primary">🖨 Imprimir / Guardar PDF</button>
 </div>
 </form>
 

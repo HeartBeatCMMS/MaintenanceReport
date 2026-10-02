@@ -58,6 +58,12 @@ html, body{
   gap: 8px;
 }
 
+.bottom-actions{
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 24px;
+}
+
 .print-tip{
   margin: 0;
   padding: 6px 20px;
@@ -67,6 +73,31 @@ html, body{
   text-align: center;
   border-bottom: 1px solid var(--color-border);
 }
+
+.format-manager{
+  max-width: 1100px;
+  margin: 14px auto 0;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.format-manager-main, .format-review-nav, .format-review-actions, .format-summary{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.format-picker{ flex: 1 1 260px; min-width: 0; }
+.format-picker label{ display: block; margin-bottom: 3px; color: var(--color-muted); font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
+.format-manager .field-input{ min-height: 40px; }
+.format-manager .btn-danger{ color: var(--color-danger); background: #fff; border-color: var(--color-danger); }
+.format-review-nav{ justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-border); }
+.format-review-nav[hidden]{ display: none; }
+.format-review-actions{ justify-content: flex-end; }
+.format-summary{ gap: 6px 16px; margin-top: 10px; padding-top: 9px; border-top: 1px solid #e2e7ed; color: var(--color-muted); font-size: 11px; }
+.format-summary strong{ margin-left: auto; color: var(--color-primary-dark); }
+.format-summary .is-complete{ color: #23633b; }
 
 .btn{
   font-family: inherit;
@@ -486,7 +517,20 @@ textarea.field-input{ resize: vertical; min-height: 60px; }
   .toolbar-title{ font-size: 15px; line-height: 1.35; }
   .toolbar-actions{ display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
   .toolbar-actions .btn{ min-height: 44px; padding: 8px; }
+  .bottom-actions{ padding: 0 12px 20px; }
+  .bottom-actions .btn{ width: 100%; min-height: 48px; }
   .print-tip{ padding: 8px 12px; text-align: left; }
+  .format-manager{ margin: 10px 12px 0; padding: 10px; }
+  .format-manager-main{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .format-picker{ grid-column: 1 / -1; }
+  .format-manager-main .btn{ min-height: 44px; padding: 7px; }
+  .format-manager-main #btnReviewFormats{ grid-column: 1 / -1; }
+  .format-review-nav{ align-items: stretch; }
+  .format-review-actions{ display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .format-review-actions .btn{ min-height: 44px; }
+  .format-review-actions #btnExitReview{ grid-column: 1 / -1; min-height: 40px; }
+  .format-summary{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+  .format-summary strong{ grid-column: 1 / -1; margin-left: 0; }
   .doc-header{ gap: 8px; }
   .header-left{ align-items: flex-start; }
   .logo-box{ width: 56px; height: 56px; }
